@@ -1,0 +1,11 @@
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Python-specific files
+__pycache__/
+*.py[cod]
+
+# Credentials
+credentials.json
+token.json
