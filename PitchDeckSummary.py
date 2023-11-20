@@ -6,7 +6,8 @@ import openai
 import streamlit as st
 
 # Langchain imports
-from langchain import OpenAI, PromptTemplate
+from langchain.llms import OpenAI
+from langchain.prompts import PromptTemplate
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.document_loaders import PyPDFLoader
 from langchain.chains.summarize import load_summarize_chain
@@ -19,8 +20,11 @@ from Templates import default_summary_template, get_summary_prompt_template, get
 # Import custom parser module
 from SummaryParser import parse_summary
 
-#Import drive export module
+# Import drive export module
 from DriveExport import export_to_drive
+
+# Import vision analyzer module
+from VisionAnalyzer import get_descriptions
 
 
 def main():
@@ -61,6 +65,7 @@ def main():
     # Rest of the UI elements & holders, below the summary text
     summary_button_holder = st.empty()
     summary_button = summary_button_holder.button('Generate Summary 🪄', disabled=True)
+    use_vision = st.checkbox("Use GPT-4 Vision API (costs more)")
     cancel_button_holder = st.empty()
     export_button_holder = st.empty()
     export_button = None
@@ -73,8 +78,7 @@ def main():
             with tempfile.NamedTemporaryFile(delete=False) as tmp_file:
                 tmp_file.write(pdf_file.read())
                 pdf_path = tmp_file.name
-                loader = PyPDFLoader(pdf_path)
-                pages = loader.load_and_split()
+                
                 summary_button_holder.empty()
 
                 # Activate the summary button
@@ -94,7 +98,15 @@ def main():
         summary_prompt = PromptTemplate.from_template(summary_prompt_template)
         refine_prompt = PromptTemplate.from_template(summary_refine_template)
 
-        combined_content = ''.join([p.page_content for p in pages])  #get entire page data
+        if not use_vision:
+            loader = PyPDFLoader(pdf_path)
+            pages = loader.load_and_split()
+            combined_content = ''.join([p.page_content for p in pages])
+        else:
+            # Use VisionAnalyzer to get descriptions of slides
+            descriptions, cost = get_descriptions(pdf_path)
+            combined_content = "\n\n".join(descriptions)
+        
         texts = text_splitter.split_text(combined_content)
         docs = [Document(page_content=t) for t in texts]
         steps_n = len(texts)
@@ -117,10 +129,11 @@ def main():
             output_key="output_text",
             verbose=True)
         
-        with get_openai_callback() as cost:
-            summaries = chain({"input_documents": docs}, return_only_outputs=True)
-            print("\nNew run:\n")
-            print(cost)
+        with st.spinner("Generating summary..."):
+            with get_openai_callback() as cost:
+                summaries = chain({"input_documents": docs}, return_only_outputs=True)
+                print("\nNew run:\n")
+                print(cost)
 
         message_holder.empty()
         summary_text.empty()

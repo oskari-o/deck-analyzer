@@ -9,3 +9,6 @@ __pycache__/
 # Credentials
 credentials.json
 token.json
+
+temp/
+test_data/

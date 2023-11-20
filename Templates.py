@@ -14,18 +14,23 @@ Summary:
 (here a short general summary of the company and the deal)
 
 Problem:
+(What problem is the company addressing)
 
 Product & Business model:
+(What is the main product, how is it priced and from whom)
 
 Unique Selling Proposition:
+(How does the company differentiate)
 
 Market & Competition:
 (Size if estimated)
 (Competitors if known)
 
 Customers & sales:
+(Who are the customers, how many, how much revenue per customer)
 
 Product maturity & Roadmap:
+(State of the product, future plans)
 
 Team & Management:
 (Who are the founders)
@@ -50,8 +55,8 @@ Deal structure & terms:
 # Template for the summary prompt
 def get_summary_prompt_template(summary_template):
     prompt_template = """
-You are an expert in summarizing startup pitchdecks.
-Your goal is to create a structured summary memo of a pitchdeck for VC evaluation.
+You are an expert in summarizing startup pitchdecks according to a given template.
+Your goal is to create a structured summary memo of a pitchdeck for VC evaluation, according to the given template.
 Below you find a partial extraction of the original pitchdeck pdf text:
 --------
 {text}
@@ -59,7 +64,7 @@ Below you find a partial extraction of the original pitchdeck pdf text:
 
 Include only info existing in the pitchdeck. Total output will be a list of important aspects of the startup company in question, very briefly in bullet points (no lenghty sentences), in the format of the following template:
 
-SUMMARY FORMAT TEMPLATE
+SUMMARY FORMAT TEMPLATE:
 
 """ + summary_template
     
@@ -68,8 +73,8 @@ SUMMARY FORMAT TEMPLATE
 # Template for the refine prompt
 def get_refine_prompt_template(summary_template):
     prompt_template = """
-You are an expert in summarizing startup pitchdecks.
-Your goal is to create a structured summary memo of a pitchdeck for VC evaluation.
+You are an expert in summarizing startup pitchdecks according to a given template.
+Your goal is to create a structured summary memo of a pitchdeck for VC evaluation, according to the given template.
 We have provided an existing summary up to a certain point: 
 --------
 {existing_answer}
@@ -82,7 +87,7 @@ Given the new context, refine the summary if applicable. You can trust the exist
 Total output will be a list of important aspects of the startup company in question, very briefly in bullet points (no lenghty sentences), in the format of the following template.
 If the existing summary doesn't yet follow the following template, change it to the following template:
 
-SUMMARY FORMAT TEMPLATE
+SUMMARY FORMAT TEMPLATE:
         
     """ + summary_template
     

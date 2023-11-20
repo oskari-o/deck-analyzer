@@ -9,7 +9,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from testSummary import test_summary_1, test_summary_2
+from test_data.testSummary import test_summary_1, test_summary_2
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive']
@@ -18,9 +18,6 @@ SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.c
 TEMPLATE_DOCUMENT_ID = '1Zs3Hm_7Wmv3wUG-MeBBGCHq60Lo-xqZqKhl_xACErRc'
 
 def export_to_drive(summary: dict):
-    """Shows basic usage of the Docs API.
-    Prints the title of a sample document.
-    """
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
