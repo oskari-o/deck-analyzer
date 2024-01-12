@@ -52,13 +52,14 @@ def main():
 
     # Initiate session state for summary storage
     if 'summary' not in st.session_state:
-        st.session_state.summary = ''
+        print("Initializing summary")
+        st.session_state['summary'] = ''
     if 'summary-json' not in st.session_state:
         st.session_state['summary-json'] = {}
     
     # If summary is not empty, display it, otherwise display placeholder
-    if st.session_state.summary != '':
-        summary_text.text(st.session_state.summary)
+    if st.session_state['summary'] != '':
+        summary_text.text(st.session_state['summary'])
     else:
         summary_text.markdown("*Summary will appear here*")
     
@@ -106,6 +107,10 @@ def main():
             # Use VisionAnalyzer to get descriptions of slides
             descriptions, cost = get_descriptions(pdf_path)
             combined_content = "\n\n".join(descriptions)
+        
+        #
+        # Change this to use either GPT4Summarizer.py or the new langchain api 
+        #
         
         texts = text_splitter.split_text(combined_content)
         docs = [Document(page_content=t) for t in texts]

@@ -1,5 +1,8 @@
+from __future__ import print_function
+
 import os.path
 from datetime import date
+from dotenv import load_dotenv
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -9,11 +12,15 @@ from googleapiclient.errors import HttpError
 
 from test_data.testSummary import test_summary_1, test_summary_2
 
+load_dotenv()
+
+### Very much WIP
+
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/documents', 'https://www.googleapis.com/auth/drive']
 
 # The ID of a sample document, the light memo template.
-TEMPLATE_DOCUMENT_ID = '1Zs3Hm_7Wmv3wUG-MeBBGCHq60Lo-xqZqKhl_xACErRc'
+TEMPLATE_DOCUMENT_ID = os.getenv('TEMPLATE_DOCUMENT_ID')
 
 def export_to_drive(summary: dict):
     creds = None
@@ -42,7 +49,7 @@ def export_to_drive(summary: dict):
         # Form new document title & request body
         today = date.today()
         current_date = today.strftime("%B %d, %Y")
-        company_name = summary['companyName']
+        company_name = summary['Light Memo'] or "Company Name"
         copy_title = f'{company_name} - Light Memo {current_date}'
         body = {
             'name': copy_title

@@ -117,7 +117,7 @@ async def process_pdf(pdf_path, prompt_per_page):
   print(f'Processing {length} pages...')
   
   # Interpret each page
-  async with httpx.AsyncClient(timeout = 30.0) as client:
+  async with httpx.AsyncClient(timeout = 40.0) as client:
     progress_bar = tqdm(range(length))
     
     async def interpret_and_update(i):
