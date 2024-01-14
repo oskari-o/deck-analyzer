@@ -14,13 +14,13 @@ import pandas as pd
 from prompt_templates.default_summary_template import default_summary_template
 
 # Import vision analyzer module
-from VisionAnalyzer import get_descriptions, get_pdf_page_count
+from vision_analyzer import get_descriptions, get_pdf_page_count
 
 # Import GPT-4 summarizer module
-from GPT4Summarizer import iteratively_summarize, n_chunks
+from gpt4_summarizer import iteratively_summarize, n_chunks
 
 # Import response parser module
-from ResponseParser import structurize_summary
+from response_parser import structurize_summary
 
 # Import drive export module
 # from DriveExport import export_to_drive
@@ -30,7 +30,7 @@ def main():
 
     # Title, caption and PDF file uploader
     st.title("Pitchdeck :rainbow[Summarizer] 1.0 ✨")
-    st.caption("This app uses OpenAI's GPT-3.5 to summarize pitchdecks according to a given summary template. Copyright 2023.")
+    st.caption("This app uses OpenAI's GPT-4 to summarize pitchdecks according to a given summary template. Copyright 2023.")
     pdf_file = st.file_uploader("Choose a PDF file", type="pdf")
 
     # Summary template input, default template is loaded from Templates.py

@@ -5,6 +5,7 @@ Thumbs.db
 # Python-specific files
 __pycache__/
 *.py[cod]
+venv/
 
 # Credentials
 credentials.json

@@ -3,8 +3,8 @@ import argparse
 from tqdm import tqdm
 from math import ceil
 
-from VisionAnalyzer import get_descriptions
-from ResponseParser import structurize_summary
+from vision_analyzer import get_descriptions
+from response_parser import structurize_summary
 from prompt_templates.iteration_prompts import initial_prompt, refine_prompt
 from prompt_templates.default_summary_template import default_summary_template
 
