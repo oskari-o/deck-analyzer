@@ -30,7 +30,7 @@ To run this application locally, follow these steps:
    pip install -r requirements.txt
 4. **Run the Application**:
    ```bash
-   streamlit run PitchDeckSummary.py
+   streamlit run st_deck_summarizer.py
 
 ## Application Logic
 ... TBD ...
