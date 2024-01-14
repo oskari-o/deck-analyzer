@@ -1,9 +1,15 @@
 import re
+import os
+from dotenv import load_dotenv
 from openai import OpenAI
 
-def structurize_summary(summary):
+def structurize_summary(summary, api_key=None):
 
-  client = OpenAI()
+  if api_key is None:
+    load_dotenv()
+    api_key = os.getenv("OPENAI_API_KEY")
+  
+  client = OpenAI(api_key=api_key)
 
   input_p1000_tokens = 0.03
   output_p1000_tokens = 0.06

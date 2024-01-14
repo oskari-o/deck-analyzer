@@ -1,4 +1,5 @@
 import os
+from dotenv import load_dotenv
 import base64
 import time
 
@@ -56,10 +57,12 @@ def convert_pdf_to_jpeg(pdf_path, zoom_factor=1, output_folder_path="temp"):
   return files
 
 
-async def interpret_image(client, image_path, prompt, delete_file=False):
+async def interpret_image(client, image_path, prompt, delete_file=False, api_key=None):
 
   # OpenAI API Key
-  api_key = os.environ['OPENAI_API_KEY']
+  if not api_key:
+    load_env()
+    api_key = os.environ['OPENAI_API_KEY']
 
   # Function to encode the image
   def encode_image(image_path):
@@ -115,7 +118,7 @@ async def interpret_image(client, image_path, prompt, delete_file=False):
   
   return response.json(), total_cost
 
-async def process_pdf(pdf_path, prompt_per_page, zoom_factor=1, delete_temp_files=False):
+async def process_pdf(pdf_path, prompt_per_page, zoom_factor=1, delete_temp_files=False, api_key=None):
   
   # Convert PDF to JPEG
   jpeg_paths = convert_pdf_to_jpeg(pdf_path, zoom_factor=zoom_factor)
@@ -129,7 +132,7 @@ async def process_pdf(pdf_path, prompt_per_page, zoom_factor=1, delete_temp_file
     
     async def interpret_and_update(i):
       time.sleep(i * 0.5 + 0.1)
-      result = await interpret_image(client, jpeg_paths[i], prompt_per_page, delete_file=delete_temp_files)
+      result = await interpret_image(client, jpeg_paths[i], prompt_per_page, delete_file=delete_temp_files, api_key=api_key)
       progress_bar.update(1)
       return result
     
@@ -144,8 +147,8 @@ async def process_pdf(pdf_path, prompt_per_page, zoom_factor=1, delete_temp_file
     
   return descriptions, total_cost
 
-def get_descriptions(pdf_path, prompt_per_page=main_prompt, zoom_factor=1.0, delete_temp_files=False):
-  descriptions, cost = asyncio.run(process_pdf(pdf_path, prompt_per_page, zoom_factor=zoom_factor, delete_temp_files=delete_temp_files))
+def get_descriptions(pdf_path, prompt_per_page=main_prompt, zoom_factor=1.0, delete_temp_files=False, api_key=None):
+  descriptions, cost = asyncio.run(process_pdf(pdf_path, prompt_per_page, zoom_factor=zoom_factor, delete_temp_files=delete_temp_files, api_key=api_key))
   return descriptions, cost
 
 # if __name__ == "__main__":

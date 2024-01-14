@@ -1,3 +1,8 @@
+import os
+
+# dotenv
+from dotenv import load_dotenv
+
 # Tempfile
 import tempfile
 
@@ -31,6 +36,8 @@ def main():
     # Title, caption and PDF file uploader
     st.title("Pitchdeck :rainbow[Summarizer] 1.0 ✨")
     st.caption("This app uses OpenAI's GPT-4 to summarize pitchdecks according to a given summary template. Copyright 2023.")
+    api_key_holder = st.empty()
+    api_key_input = None
     pdf_file = st.file_uploader("Choose a PDF file", type="pdf")
 
     # Summary template input, default template is loaded from Templates.py
@@ -38,7 +45,20 @@ def main():
     summary_template_input = st.text_area("Summary template", value=summary_template, height=500, max_chars=1500, placeholder="Enter a summary template")
     st.divider()
     summary_text = st.empty()
+    
+    # Initiate session state and input / display for API key
+    load_dotenv()
+    env_api_key = os.environ.get('OPENAI_API_KEY')
+    
+    if env_api_key is not None:
+        st.session_state['api_key'] = env_api_key
+        api_key_input= api_key_holder.text_input("OpenAI API Key - Read from .env file", type="password", value=st.session_state['api_key'], disabled=True)
+    else:
+        if 'api_key' not in st.session_state:
+            st.session_state['api_key'] = ''
+        api_key_input = api_key_holder.text_input("OpenAI API Key", type="password", value=st.session_state['api_key'])
 
+    
     # Initiate session state for summary storage
     if 'summary' not in st.session_state:
         st.session_state['summary'] = ''
@@ -90,6 +110,9 @@ def main():
         if summary_template_input is not None:
             summary_template = summary_template_input
 
+        if api_key_input is not None:
+            st.session_state['api_key'] = api_key_input
+
         if not use_vision:
             # Use basic PyPDF from Langchain to get text from slides
             loader = PyPDFLoader(pdf_path)
@@ -100,7 +123,7 @@ def main():
             message_holder.info(f"Generating descriptions with GPT-4 Vision for {n_pages} pages...", icon="📷")
             # Use VisionAnalyzer to get descriptions of slides
             with st.spinner("Working..."):
-                descriptions, cost = get_descriptions(pdf_path, delete_temp_files=True)
+                descriptions, cost = get_descriptions(pdf_path, delete_temp_files=True, api_key=st.session_state['api_key'])
             combined_content = "\n\n".join(descriptions)
             message_holder.empty()
         
@@ -117,7 +140,7 @@ def main():
         
         # Generate the summary
         with st.spinner("Working..."):
-            summary, cost = iteratively_summarize(combined_content, summary_template=summary_template)
+            summary, cost = iteratively_summarize(combined_content, summary_template=summary_template, api_key=st.session_state['api_key'])
 
         message_holder.empty()
         summary_text.empty()
@@ -143,7 +166,7 @@ def main():
     if restructure_button:
         message_holder.info("Processing summary in 1 step", icon="⛏️")
         with st.spinner("Working..."):
-            structured_summary, cost = structurize_summary(st.session_state.summary)
+            structured_summary, cost = structurize_summary(st.session_state.summary, api_key=st.session_state['api_key'])
         message_holder.empty()
         
         st.session_state['summary-json'] = structured_summary

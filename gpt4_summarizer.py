@@ -1,4 +1,6 @@
 from openai import OpenAI
+import os
+from dotenv import load_dotenv
 import argparse
 from tqdm import tqdm
 from math import ceil
@@ -27,11 +29,16 @@ def split_text(text, chunk_size=1500):
 
 # Printing to be adjusted
 # Important: Make a separate exported function that splits the chunks
-def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_template=default_summary_template()):
+def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_template=default_summary_template(), api_key=None):
     chunks = split_text(text)
     current_summary = initial_summary
     n_chunks = len(chunks)
-    client = OpenAI()
+    
+    if api_key is None:
+        load_dotenv()
+        api_key = os.getenv("OPENAI_API_KEY")
+    
+    client = OpenAI(api_key=api_key)
     total_cost = 0
     
     input_p1000_tokens = 0.03
