@@ -21,7 +21,7 @@ To run this application locally, follow these steps:
 
 1. **Clone the Repository**:
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/jjooskari/deck-analyzer
 2. **Navigate to the Project Directory**:
    ```bash
    cd path/to/project
