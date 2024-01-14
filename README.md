@@ -31,5 +31,9 @@ To run this application locally, follow these steps:
 4. **Run the Application**:
    ```bash
    streamlit run PitchDeckSummary.py
+
+## Application Logic
+... TBD ...
+
 ### License: MIT
    
