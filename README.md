@@ -14,7 +14,7 @@ This application is a prototype and is intended for demonstration purposes. It i
 - **Data Structuring**: Functionality to extract headings and values from summaries and display them in a tabular format.
 
 ## Live Demo
-The application is hosted at: [https://examplehosting.com/myapp](https://examplehosting.com/myapp)
+The application is hosted at: [TBD](TBD)
 
 ## Local Setup and Installation
 To run this application locally, follow these steps:
