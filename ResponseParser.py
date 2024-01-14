@@ -13,7 +13,7 @@ Provide a complete list of all the headings present in the following text,
 in the order in which they appear, delimited by a newline and semicolon,
 like the exaple below. Do not return anything else than the list of headings:
 
-Exapmle output:
+Example output:
 
 ---
 
@@ -23,7 +23,7 @@ Website;
 ...
 Problem;
 ...
-Deal Strcuture & Terms;
+Deal Structure & Terms;
 
 ---
 

@@ -1,7 +1,12 @@
 from openai import OpenAI
-from test_data.testDescription import get_test_description
 import argparse
 from tqdm import tqdm
+from math import ceil
+
+from VisionAnalyzer import get_descriptions
+from ResponseParser import structurize_summary
+from prompt_templates.iteration_prompts import initial_prompt, refine_prompt
+from prompt_templates.default_summary_template import default_summary_template
 
 verbose = False
 
@@ -13,100 +18,16 @@ def v_log(*args, **kwargs):
     if verbose:
         print(*args, **kwargs)
 
-def initial_prompt(chunk, summary_template):
-    return f'''
-You are an expert in summarizing startup pitchdecks according to a given template.
-Your goal is to create a structured summary memo of a pitchdeck for VC evaluation, according to the given template.
-Below you find a partial extraction of the original pitchdeck's description text, slide by slide:
---------
-{chunk}
---------
-
-Include only info existing in the pitchdeck. Total output will be a list of important aspects of the startup company in question, very briefly in bullet points (no lenghty sentences), in the format of the following template:
-
-SUMMARY FORMAT TEMPLATE:
-
-{summary_template}
-'''
-
-def refine_prompt(chunk, summary_template, existing_summary):
-    return f'''
-You are an expert in summarizing startup pitchdecks according to a given template.
-Your goal is to create a structured summary memo of a pitchdeck for VC evaluation, according to the given template.
-We have provided an existing summary up to a certain point: 
---------
-{existing_summary}
---------
-Below you find a partial extraction of the original pitchdeck's description text, slide by slide:
---------
-{chunk}
---------
-Given the new context, refine the summary if applicable. You can trust the existing summary information. If the context isn't useful, return the original summary.
-Total output will be a list of important aspects of the startup company in question, very briefly in bullet points (no lenghty sentences), in the format of the following template.
-If the existing summary doesn't yet follow the following template, change it to the following template:
-
-SUMMARY FORMAT TEMPLATE:
-
-{summary_template}
-'''
-
-summary_template = """
-Light memo: (Company name)
-
-Stage: (Funding round)
-Contact e.g. CEO:
-Website: 
-Pitch deck:
-Deal Team: (Leave empty)
-Date: (Leave empty)
-
-Summary:
-(here a short general summary of the company and the deal)
-
-Problem:
-(What problem is the company addressing)
-
-Product & Business model:
-(What is the main product, how is it priced and from whom)
-
-Unique Selling Proposition:
-(How does the company differentiate)
-
-Market & Competition:
-(Size if estimated)
-(Competitors if known)
-
-Customers & sales:
-(Who are the customers, how many, how much revenue per customer)
-
-Product maturity & Roadmap:
-(State of the product, future plans)
-
-Team & Management:
-(Who are the founders - Names & backgrounds)
-
-Impact Assessment (Art. 9):
-
-Investors & board:
-(Existing investors if known)
-
-Financials:
-(Revenue now & projected if known)
-
-Technology & IPs:
-
-Regulatory risks/opportunities:
-
-Deal structure & terms:
-(Stage/funding volume/timeline)
-(Participation / Lead / Syndication partners etc.)
-"""
+def n_chunks(text, chunk_size=1500):
+    return ceil(len(text) / chunk_size)
 
 def split_text(text, chunk_size=1500):
     # Split the text into chunks of 'chunk_size'
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
-def iteratively_summarize(text, initial_summary="", iter_callback=None): # Printing to be removed/adjusted
+# Printing to be adjusted
+# Important: Make a separate exported function that splits the chunks
+def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_template=default_summary_template()):
     chunks = split_text(text)
     current_summary = initial_summary
     n_chunks = len(chunks)
@@ -152,18 +73,28 @@ def iteratively_summarize(text, initial_summary="", iter_callback=None): # Print
 
 
 def main():
+    
+    def range_limited_float_type(arg):
+        """ Type function for argparse - a float within 0.0 - 1.0 """
+        try:
+            f = float(arg)
+        except ValueError:    
+            raise argparse.ArgumentTypeError("Must be a floating point number")
+        if f < 0.0 or f > 1.0:
+            raise argparse.ArgumentTypeError("Argument must be < 1.0 and > 0.0")
+        return f
+    
     parser = argparse.ArgumentParser(description='Process a Pitch Deck PDF file for summarization.')
+    
     parser.add_argument("-v", "--verbose", action="store_true", help="Increase output verbosity")
+    parser.add_argument("-z", "--zoom", type=range_limited_float_type, default=1.0, help="Zoom factor for PDF to JPEG conversion - 1 is original size, 0.5 is half resolution")
     parser.add_argument('pdf_path', type=str, help='Path to the PDF file to be processed')
     args = parser.parse_args()
 
     set_verbosity(args.verbose)
     pdf_path = args.pdf_path
     
-    from VisionAnalyzer import get_descriptions
-    from ResponseParser import structurize_summary
-    
-    description_list, cost1 = get_descriptions(pdf_path)
+    description_list, cost1 = get_descriptions(pdf_path, zoom_factor=args.zoom)
     long_description = "\n".join(description_list)
     # cost1 = 0
     # long_description = get_test_description()

@@ -1,8 +1,8 @@
 import os
 import base64
-import requests
+import time
 
-import fitz # PyMuPDF
+import fitz
 from PIL import Image
 import io
 
@@ -10,12 +10,13 @@ import httpx
 import asyncio
 from tqdm.asyncio import tqdm
 
-main_prompt = '''
-  This image is one page of a pitch deck of a startup company. You are producing descriptions 
-  of each page in the deck. Now, describe what is seen on this page as effectively and briefly
-  as possible, focusing only on factors relevant for evaluating the company in venture capital
-  investment context. Limit the description to 3-5 sentences.
-  '''
+from prompt_templates.vision_prompt import default_vision_prompt as main_prompt
+
+def get_pdf_page_count(pdf_path):
+  pdf = fitz.open(pdf_path)
+  page_count = len(pdf)
+  pdf.close()
+  return page_count
 
 def convert_pdf_to_jpeg(pdf_path, zoom_factor=1, output_folder_path="temp"):
   # Open the PDF file
@@ -44,18 +45,18 @@ def convert_pdf_to_jpeg(pdf_path, zoom_factor=1, output_folder_path="temp"):
     # Convert to JPEG
     jpeg_image = image.convert("RGB")
 
-    filename = f"{output_folder_path}/page_{page_number + 1}.jpeg"
+    filename = f"{output_folder_path}/page_{page_number + 1}.png"
     
-    jpeg_image.save(filename, "JPEG")
+    jpeg_image.save(filename, "PNG")
     files.append(filename)
 
   pdf.close()
-  print("Finished converting PDF to JPEG. File names:")
+  print("Finished converting PDF to PNG. File names:")
   print(files)
   return files
 
 
-async def interpret_image(client, image_path, prompt):
+async def interpret_image(client, image_path, prompt, delete_file=False):
 
   # OpenAI API Key
   api_key = os.environ['OPENAI_API_KEY']
@@ -97,21 +98,27 @@ async def interpret_image(client, image_path, prompt):
   
   input_cost_per_1000_tokens = 0.01
   output_cost_per_1000_tokens = 0.03
-
-  # Mock API
-  # response = await client.get("http://127.0.0.1:5000/api/mock")
   
   # Real API
   response = await client.post("https://api.openai.com/v1/chat/completions", headers=headers, json=payload)
+  
+  if (response.status_code != 200):
+    print(response.json())
+    print(f"\nImage path: {image_path}\n")
+    # Should raise an exception here
+    
+  # Delete temp file
+  if delete_file:
+    os.remove(image_path)
   
   total_cost = input_cost_per_1000_tokens / 1000 * response.json()["usage"]["prompt_tokens"] + output_cost_per_1000_tokens / 1000 * response.json()["usage"]["completion_tokens"]
   
   return response.json(), total_cost
 
-async def process_pdf(pdf_path, prompt_per_page):
+async def process_pdf(pdf_path, prompt_per_page, zoom_factor=1, delete_temp_files=False):
   
   # Convert PDF to JPEG
-  jpeg_paths = convert_pdf_to_jpeg(pdf_path, zoom_factor=1)
+  jpeg_paths = convert_pdf_to_jpeg(pdf_path, zoom_factor=zoom_factor)
   length = len(jpeg_paths)
   
   print(f'Processing {length} pages...')
@@ -121,7 +128,8 @@ async def process_pdf(pdf_path, prompt_per_page):
     progress_bar = tqdm(range(length))
     
     async def interpret_and_update(i):
-      result = await interpret_image(client, jpeg_paths[i], prompt_per_page)
+      time.sleep(i * 0.5 + 0.1)
+      result = await interpret_image(client, jpeg_paths[i], prompt_per_page, delete_file=delete_temp_files)
       progress_bar.update(1)
       return result
     
@@ -136,13 +144,13 @@ async def process_pdf(pdf_path, prompt_per_page):
     
   return descriptions, total_cost
 
-def get_descriptions(pdf_path, prompt_per_page=main_prompt):
-  descriptions, cost = asyncio.run(process_pdf(pdf_path, prompt_per_page))
+def get_descriptions(pdf_path, prompt_per_page=main_prompt, zoom_factor=1.0, delete_temp_files=False):
+  descriptions, cost = asyncio.run(process_pdf(pdf_path, prompt_per_page, zoom_factor=zoom_factor, delete_temp_files=delete_temp_files))
   return descriptions, cost
 
-if __name__ == "__main__":
-  descriptions, cost = get_descriptions("test_data/Dodona Pitch Deck.pdf")
-  print("\n\n".join(descriptions))
+# if __name__ == "__main__":
+#   descriptions, cost = get_descriptions("test_data/test_deck.pdf")
+#   print("\n\n".join(descriptions))
   
   
   

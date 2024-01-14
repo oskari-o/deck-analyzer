@@ -13,7 +13,6 @@ token.json
 # Environment variables
 .env
 
+# Temporary files & test data
 temp/
 test_data/
-
-TestAPI.py

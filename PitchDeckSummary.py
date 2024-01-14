@@ -1,43 +1,32 @@
-import os
+# Tempfile
 import tempfile
-import openai
 
 # Streamlit 
 import streamlit as st
 
-# Langchain imports
-from langchain.llms import OpenAI
-from langchain.prompts import PromptTemplate
-from langchain.text_splitter import CharacterTextSplitter
+# Langchain PyPDF
 from langchain.document_loaders import PyPDFLoader
-from langchain.chains.summarize import load_summarize_chain
-from langchain.docstore.document import Document
-from langchain.callbacks import get_openai_callback
 
-# Import ccustom templates
-from Templates import default_summary_template, get_summary_prompt_template, get_refine_prompt_template
+# Pandas
+import pandas as pd
 
-# Import custom parser module
-from SummaryParser import parse_summary
-
-# Import drive export module
-from DriveExport import export_to_drive
+# Import custom templates
+from prompt_templates.default_summary_template import default_summary_template
 
 # Import vision analyzer module
-from VisionAnalyzer import get_descriptions
+from VisionAnalyzer import get_descriptions, get_pdf_page_count
+
+# Import GPT-4 summarizer module
+from GPT4Summarizer import iteratively_summarize, n_chunks
+
+# Import response parser module
+from ResponseParser import structurize_summary
+
+# Import drive export module
+# from DriveExport import export_to_drive
 
 
 def main():
-    openai.api_key = os.environ['OPENAI_API_KEY']
-
-    llm = OpenAI(temperature=0, max_tokens=-1)
-
-    text_splitter = CharacterTextSplitter(
-        separator = "\n",
-        chunk_size = 8000,
-        chunk_overlap  = 250,
-        length_function = len,
-    )
 
     # Title, caption and PDF file uploader
     st.title("Pitchdeck :rainbow[Summarizer] 1.0 ✨")
@@ -46,31 +35,39 @@ def main():
 
     # Summary template input, default template is loaded from Templates.py
     summary_template = default_summary_template()
-    summary_template_input = st.text_area("Summary template", value=summary_template, height=500, max_chars=1000, placeholder="Enter a summary template")
-    st.subheader("Summary")
+    summary_template_input = st.text_area("Summary template", value=summary_template, height=500, max_chars=1500, placeholder="Enter a summary template")
+    st.divider()
     summary_text = st.empty()
 
     # Initiate session state for summary storage
     if 'summary' not in st.session_state:
-        print("Initializing summary")
         st.session_state['summary'] = ''
     if 'summary-json' not in st.session_state:
         st.session_state['summary-json'] = {}
+    if 'summary-table-data' not in st.session_state:
+        st.session_state['summary-table-data'] = {}
     
     # If summary is not empty, display it, otherwise display placeholder
     if st.session_state['summary'] != '':
-        summary_text.text(st.session_state['summary'])
+        summary_text.text_area("**Summary**", value=st.session_state['summary'], height=1500, disabled=True)
     else:
-        summary_text.markdown("*Summary will appear here*")
+        summary_text.text_area("**Summary**", value="Summary will appear here", disabled=True)
     
     # Rest of the UI elements & holders, below the summary text
     summary_button_holder = st.empty()
     summary_button = summary_button_holder.button('Generate Summary 🪄', disabled=True)
     use_vision = st.checkbox("Use GPT-4 Vision API (costs more)")
     cancel_button_holder = st.empty()
+    restructure_button_holder = st.empty()
+    restructure_button = None
     export_button_holder = st.empty()
     export_button = None
     message_holder = st.empty()
+    summary_table_holder = st.empty()
+    
+    # If structured summary exists is not empty, display it
+    if st.session_state['summary-table-data'] != {}:
+        summary_table_holder.table(pd.DataFrame(st.session_state['summary-table-data']))
 
     pages = None
 
@@ -92,29 +89,23 @@ def main():
     if summary_button:
         if summary_template_input is not None:
             summary_template = summary_template_input
-        
-        summary_prompt_template = get_summary_prompt_template(summary_template)
-        summary_refine_template = get_refine_prompt_template(summary_template)
-
-        summary_prompt = PromptTemplate.from_template(summary_prompt_template)
-        refine_prompt = PromptTemplate.from_template(summary_refine_template)
 
         if not use_vision:
+            # Use basic PyPDF from Langchain to get text from slides
             loader = PyPDFLoader(pdf_path)
             pages = loader.load_and_split()
             combined_content = ''.join([p.page_content for p in pages])
         else:
+            n_pages = get_pdf_page_count(pdf_path)
+            message_holder.info(f"Generating descriptions with GPT-4 Vision for {n_pages} pages...", icon="📷")
             # Use VisionAnalyzer to get descriptions of slides
-            descriptions, cost = get_descriptions(pdf_path)
+            with st.spinner("Working..."):
+                descriptions, cost = get_descriptions(pdf_path, delete_temp_files=True)
             combined_content = "\n\n".join(descriptions)
+            message_holder.empty()
         
-        #
-        # Change this to use either GPT4Summarizer.py or the new langchain api 
-        #
-        
-        texts = text_splitter.split_text(combined_content)
-        docs = [Document(page_content=t) for t in texts]
-        steps_n = len(texts)
+        # Get a function that returns the steps!
+        steps_n = n_chunks(combined_content)
 
         message_holder.info(f"Generating summary in {steps_n} steps...", icon="📝")
         summary_button_holder.empty()
@@ -123,53 +114,64 @@ def main():
         
         if cancel_button:
             st.stop()
-
-        chain = load_summarize_chain(
-            llm, 
-            chain_type="refine", 
-            question_prompt=summary_prompt, 
-            refine_prompt=refine_prompt,
-            return_intermediate_steps=True,
-            input_key="input_documents",
-            output_key="output_text",
-            verbose=True)
         
-        with st.spinner("Generating summary..."):
-            with get_openai_callback() as cost:
-                summaries = chain({"input_documents": docs}, return_only_outputs=True)
-                print("\nNew run:\n")
-                print(cost)
+        # Generate the summary
+        with st.spinner("Working..."):
+            summary, cost = iteratively_summarize(combined_content, summary_template=summary_template)
 
         message_holder.empty()
         summary_text.empty()
 
-        summary_text.text(summaries["output_text"])
-        print(summaries["output_text"]) # Can be changed to logging later
-        st.session_state.summary = summaries["output_text"]
+        # summary_text.text(summary)
+        # Display the summary as a new text area
+        summary_text.text_area("**Summary**", value=summary, height=1500, disabled=True)
+        
+        print(summary) # Can be changed to logging later
+        print(f"Total cost: {cost:.3f}")
+        st.session_state.summary = summary
 
         cancel_button_holder.empty()
         summary_button = summary_button_holder.button('Re-generate Summary 🪄', key=3)
     
-    # If summary generated, display export button
+    # If summary generated, display export button & restructure button
+    # Important: Currently disabled as the export function is WIP
     if st.session_state.summary != '':
-        export_button = export_button_holder.button('Export Summary to Google Drive 📁')
+        export_button = export_button_holder.button('Export Summary to Google Drive 📁', disabled=True)
+        restructure_button = restructure_button_holder.button('Extract headings and values ⛏️')
 
-    # If export button is pressed, export the summary to Google Drive with DriveExport.py
-    if export_button:
-
-        message_holder.info("Exporting to Google Drive...", icon="📁")
-
-        print("\n\nStarting to Parse")
-
-        parsed = parse_summary(st.session_state.summary) # To Do error handling
-        st.session_state['summary-json'] = parsed
-        
-        print("\n\nStarting to Export")
-
-        file_name = export_to_drive(parsed) # To Do error handling
-
+    # If restructure button is pressed, parse the summary and display it as a table
+    if restructure_button:
+        message_holder.info("Processing summary in 1 step", icon="⛏️")
+        with st.spinner("Working..."):
+            structured_summary, cost = structurize_summary(st.session_state.summary)
         message_holder.empty()
-        message_holder.success(f"Exported to Google Drive as: {file_name}", icon="✅")
+        
+        st.session_state['summary-json'] = structured_summary
+        
+        data = {"Heading": structured_summary.keys(), "Text": structured_summary.values()}
+        st.session_state['summary-table-data'] = data
+        
+        structured_summary_df = pd.DataFrame(data)
+        summary_table_holder.table(structured_summary_df)
+            
+        restructure_button_holder.button('Extract headings and values ⛏️', disabled=True, key=4)
+        
+    # If export button is pressed, export the summary to Google Drive with DriveExport.py
+    # if export_button:
+
+    #     message_holder.info("Exporting to Google Drive...", icon="📁")
+
+    #     print("\n\nStarting to Parse")
+
+    #     #parsed = parse_summary(st.session_state.summary) # To Do error handling
+    #     st.session_state['summary-json'] = parsed
+        
+    #     print("\n\nStarting to Export")
+
+    #     file_name = export_to_drive(parsed) # To Do error handling
+
+    #     message_holder.empty()
+    #     message_holder.success(f"Exported to Google Drive as: {file_name}", icon="✅")
  
 if __name__ == "__main__":
     main()
