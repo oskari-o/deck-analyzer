@@ -19,9 +19,14 @@ def get_pdf_page_count(pdf_path):
   pdf.close()
   return page_count
 
-def convert_pdf_to_jpeg(pdf_path, zoom_factor=1, output_folder_path="temp"):
+def convert_pdf_to_jpeg(pdf_path, zoom_factor=1, output_folder_path="tmp"):
   # Open the PDF file
   pdf = fitz.open(pdf_path)
+  
+  # Check if the directory exists
+  if not os.path.exists(output_folder_path):
+    # Create the directory if it does not exist
+    os.makedirs(output_folder_path)
 
   files = []
 

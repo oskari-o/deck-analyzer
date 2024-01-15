@@ -15,5 +15,5 @@ token.json
 .env
 
 # Temporary files & test data
-temp/
+tmp/
 test_data/
