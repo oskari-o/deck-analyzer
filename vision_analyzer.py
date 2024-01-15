@@ -66,7 +66,7 @@ async def interpret_image(client, image_path, prompt, delete_file=False, api_key
 
   # OpenAI API Key
   if not api_key:
-    load_env()
+    load_dotenv()
     api_key = os.environ['OPENAI_API_KEY']
 
   # Function to encode the image

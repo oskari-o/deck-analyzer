@@ -56,7 +56,7 @@ def main():
     else:
         if 'api_key' not in st.session_state:
             st.session_state['api_key'] = ''
-        api_key_input = api_key_holder.text_input("OpenAI API Key", type="password", value=st.session_state['api_key'])
+        api_key_input = api_key_holder.text_input("OpenAI API Key. *Read more [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key)*", type="password", value=st.session_state['api_key'])
 
     
     # Initiate session state for summary storage
