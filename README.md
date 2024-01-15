@@ -36,8 +36,9 @@ To run this application locally, follow these steps:
    streamlit run st_deck_summarizer.py
 
 ## Application Logic
-![App Logic UML Diagram](app_logic_w.png)
-![App Logic UML Diagram](app_logic_tp.png)
 
-### License: MIT
+![App Logic UML Diagram](app_logic_w.png)
+
+
+**License:** Free to use under the MIT license.
    
