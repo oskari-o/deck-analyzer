@@ -14,7 +14,7 @@ This application is a prototype and is intended for proof-of-concept demonstrati
 - **Data Structuring**: Functionality to extract headings and values from summaries and display them in a tabular format.
 
 ## Live Demo
-The application is hosted at: [TBD](TBD)
+The application is hosted at: [deck-analyzer.streamlit.app](https://deck-analyzer.streamlit.app/)
 
 ## Local Setup and Installation
 To run this application locally, follow these steps:
