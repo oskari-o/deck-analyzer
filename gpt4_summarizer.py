@@ -37,7 +37,7 @@ def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_
     if api_key is None:
         load_dotenv()
         api_key = os.getenv("OPENAI_API_KEY")
-    
+
     client = OpenAI(api_key=api_key)
     total_cost = 0
     
@@ -103,8 +103,7 @@ def main():
     
     description_list, cost1 = get_descriptions(pdf_path, zoom_factor=args.zoom)
     long_description = "\n".join(description_list)
-    # cost1 = 0
-    # long_description = get_test_description()
+    
     summary, cost2 = iteratively_summarize(long_description)
     print(f"Final Summary:\n\n {summary}\n\nTotal cost: {(cost1 + cost2):.3f}")
     
