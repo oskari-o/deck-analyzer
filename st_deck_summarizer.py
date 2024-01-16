@@ -121,7 +121,7 @@ def main():
             summary_template = summary_template_input
 
         # Check & store the API key in session state
-        if api_key_input is not None:
+        if api_key_input is not "":
             if len(api_key_input) < 30 or len(api_key) > 100:
                 st.session_state['warning'] = "Invalid API key format. Please enter a valid API key.", "⚠️"
                 st.rerun()
