@@ -57,7 +57,10 @@ def main():
         if 'api_key' not in st.session_state:
             st.session_state['api_key'] = ''
         api_key_input = api_key_holder.text_input(
-            "OpenAI API Key. :gray[*Read more [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key)*]", type="password", value=st.session_state['api_key'])
+            "OpenAI API Key", 
+            type="password", 
+            value=st.session_state['api_key'],
+            help="Insert an OpenAI account related API key. Read more about where to find one [here](https://help.openai.com/en/articles/4936850-where-do-i-find-my-api-key)")
 
     # Initiate session state
     if 'summary' not in st.session_state:
