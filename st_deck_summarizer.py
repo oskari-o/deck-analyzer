@@ -85,7 +85,6 @@ def main():
     restructure_button_holder = st.empty()
     restructure_button = None
     export_button_holder = st.empty()
-    # export_button = None
     message_holder = st.empty()
     summary_table_holder = st.empty()
 
@@ -98,8 +97,6 @@ def main():
     if st.session_state['summary-table-data'] != {}:
         summary_table_holder.table(pd.DataFrame(
             st.session_state['summary-table-data']))
-
-    pages = None
 
     # If PDF file is uploaded, load it and split it into pages
     if pdf_file is not None:
@@ -117,13 +114,22 @@ def main():
                 summary_button = summary_button_holder.button(
                     'Re-generate Summary 🪄', key=2)
 
-    # If summary button is pressed, generate the summary
+    # Main block: If summary button is pressed, generate the summary
     if summary_button:
+        # Use the summary template from the input
         if summary_template_input is not None:
             summary_template = summary_template_input
 
+        # Check & store the API key in session state
         if api_key_input is not None:
-            st.session_state['api_key'] = api_key_input
+            if len(api_key_input) < 30 or len(api_key) > 100:
+                st.session_state['warning'] = "Invalid API key format. Please enter a valid API key.", "⚠️"
+                st.rerun()
+            else:
+                st.session_state['api_key'] = api_key_input
+        else:
+            st.session_state["warning"] = "No API key provided. Please enter an API key.", "⚠️"
+            st.rerun()
 
         # Empty message & warning state
         st.session_state['warning'] = '', ''
@@ -131,12 +137,14 @@ def main():
         
         cost_descriptions = 0
 
+        # UsePyPDF or Vision to get text from slides
         if not use_vision:
             # Use basic PyPDF from Langchain to get text from slides
             loader = PyPDFLoader(pdf_path)
             pages = loader.load_and_split()
             combined_content = ''.join([p.page_content for p in pages])
         else:
+            #Indicate page count
             n_pages = get_pdf_page_count(pdf_path)
             message_holder.info(
                 f"Generating descriptions with GPT-4 Vision for {n_pages} pages...", icon="📷")
@@ -154,9 +162,8 @@ def main():
                 message_holder.empty()
                 combined_content = "\n\n".join(descriptions)
 
-        # Get a function that returns the steps!
+        # Indicate the number of steps for summarization
         steps_n = n_chunks(combined_content)
-
         message_holder.info(
             f"Generating summary in {steps_n} steps...", icon="📝")
         summary_button_holder.empty()
@@ -185,11 +192,12 @@ def main():
         message_holder.success(
             f"Summary generated. Total cost: {cost_descriptions + cost_summary:.3f}$ (approx.)", icon="✅")
 
+        # Re-activate the summary button
         summary_button = summary_button_holder.button(
             'Re-generate Summary 🪄', key=3)
 
     # If summary generated, display export button & restructure button
-    # Important: Currently disabled as the export function is WIP
+    # Currently disabled as the export function is WIP
     if st.session_state.summary != '':
         export_button = export_button_holder.button(
             'Export Summary to Google Drive 📁', disabled=True)
@@ -198,25 +206,31 @@ def main():
 
     # If restructure button is pressed, parse the summary and display it as a table
     if restructure_button:
+        # Indicate started processing
         message_holder.info("Processing summary in 1 step", icon="⛏️")
+        
+        # Parse the summary
         with st.spinner("Working..."):
             structured_summary, cost = structurize_summary(
                 st.session_state.summary, api_key=st.session_state['api_key'])
         message_holder.empty()
 
+        # Store structured summary in session state
         st.session_state['summary-json'] = structured_summary
 
-        data = {"Heading": structured_summary.keys(
-        ), "Text": structured_summary.values()}
+        # Flip structure to table format
+        data = {"Heading": structured_summary.keys(), "Text": structured_summary.values()}
         st.session_state['summary-table-data'] = data
 
+        # Display the summary as a table
         structured_summary_df = pd.DataFrame(data)
         summary_table_holder.table(structured_summary_df)
 
+        # Disable the restructure button
         restructure_button_holder.button(
             'Extract headings and values ⛏️', disabled=True, key=4)
 
-    # If export button is pressed, export the summary to Google Drive with DriveExport.py
+    # If export button is pressed, export the summary to Google Drive with drive_export.py
     # if export_button:
 
     #     message_holder.info("Exporting to Google Drive...", icon="📁")
