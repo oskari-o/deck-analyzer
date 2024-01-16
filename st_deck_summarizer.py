@@ -85,7 +85,6 @@ def main():
     summary_button = summary_button_holder.button(
         'Generate Summary 🪄', disabled=True)
     use_vision = st.checkbox("Use GPT-4 Vision API (costs more)")
-    cancel_button_holder = st.empty()
     restructure_button_holder = st.empty()
     restructure_button = None
     export_button_holder = st.empty()
@@ -132,6 +131,8 @@ def main():
         # Empty message & warning state
         st.session_state['warning'] = '', ''
         message_holder.empty()
+        
+        cost_descriptions = 0
 
         if not use_vision:
             # Use basic PyPDF from Langchain to get text from slides
@@ -182,8 +183,11 @@ def main():
 
         # Store the summary in session state
         st.session_state.summary = summary
+        
+        # Display cost
+        message_holder.success(
+            f"Summary generated. Total cost: {cost_descriptions + cost_summary:.3f}$ (approx.)", icon="✅")
 
-        cancel_button_holder.empty()
         summary_button = summary_button_holder.button(
             'Re-generate Summary 🪄', key=3)
 
