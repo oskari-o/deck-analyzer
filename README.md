@@ -1,7 +1,7 @@
 # Pitch Deck Summary App
 
 ## Introduction
-The Pitch Deck Summary App is a Streamlit-based application that uses OpenAI's GPT-4 to summarize pitch decks. It is designed to provide quick and efficient summaries based on a user-provided template and supports the processing of PDF files. For greater performance, it can utilize the GPT-4 Vision API for greater detail.
+The Pitch Deck Summary App is a Streamlit-based application that uses OpenAI's GPT-4 to summarize PDF-format pitch decks of any length. It is designed to provide quick and efficient summaries based on the default or a user-provided template. Importantly, it can utilize the GPT-4 Vision API for greater detail.
 
 ### ⚠️ Note ⚠️
 
