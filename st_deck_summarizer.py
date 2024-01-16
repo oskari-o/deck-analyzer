@@ -27,16 +27,13 @@ from gpt4_summarizer import iteratively_summarize, n_chunks
 # Import response parser module
 from response_parser import structurize_summary
 
-# Import drive export module
-# from DriveExport import export_to_drive
-
 
 def main():
 
     # Title, caption and PDF file uploader
     st.title("Pitchdeck :rainbow[Summarizer] 1.0 ✨")
     st.caption(
-        "This app uses OpenAI's GPT-4 to summarize pitchdecks according to a given summary template. Copyright 2023.")
+        "This app uses OpenAI's GPT-4 to summarize pitchdecks according to a given summary template. Copyright 2024.")
     api_key_holder = st.empty()
     api_key_input = None
     pdf_file = st.file_uploader("Choose a PDF file", type="pdf")
