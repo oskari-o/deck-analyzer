@@ -14,6 +14,7 @@ SUMMARY FORMAT TEMPLATE:
 {summary_template}
 '''
 
+
 def refine_prompt(chunk, summary_template, existing_summary):
     return f'''
 You are an expert in summarizing startup pitchdecks according to a given template.

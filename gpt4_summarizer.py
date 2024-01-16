@@ -28,7 +28,6 @@ def split_text(text, chunk_size=1500):
     return [text[i:i+chunk_size] for i in range(0, len(text), chunk_size)]
 
 # Printing to be adjusted
-# Important: Make a separate exported function that splits the chunks
 def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_template=default_summary_template(), api_key=None):
     chunks = split_text(text)
     current_summary = initial_summary
@@ -44,6 +43,8 @@ def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_
     input_p1000_tokens = 0.03
     output_p1000_tokens = 0.06
     
+    finished = True
+    
     print(f"Processing {n_chunks} chunks...")
     
     progress_bar = tqdm(range(n_chunks))
@@ -55,18 +56,28 @@ def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_
             prompt = refine_prompt(chunks[i], summary_template, current_summary)
             
         v_log(f"\nPrompt {i + 1}/{n_chunks}:\n{prompt}\n")
+        total_cost = 0.0
         
-        completion = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "system", "content": prompt}],
-            temperature=0
-        )
-        v_log(completion)
-        current_summary = completion.choices[0].message.content
+        try:
+            completion = client.chat.completions.create(
+                model="gpt-4",
+                messages=[{"role": "system", "content": prompt}],
+                temperature=0
+            )
+            v_log(completion)
+            current_summary = completion.choices[0].message.content
+            
+            output_cost = completion.usage.completion_tokens * output_p1000_tokens / 1000
+            input_cost = completion.usage.prompt_tokens * input_p1000_tokens / 1000
+            total_cost += (output_cost + input_cost)
         
-        output_cost = completion.usage.completion_tokens * output_p1000_tokens / 1000
-        input_cost = completion.usage.prompt_tokens * input_p1000_tokens / 1000
-        total_cost += (output_cost + input_cost)
+        except Exception as e:
+            print(f"Error processing chunk {i + 1}/{n_chunks}:\n{e}")
+            #TODO: Enable retrying after a delay / if connection is lost
+            #E.g. openai.error.TimeoutError ...
+            finished = False
+            break
+        
         v_log(f"\nCost so far: {total_cost:.3f}\n")
         
         if not iter_callback is None:
@@ -75,8 +86,9 @@ def iteratively_summarize(text, initial_summary="", iter_callback=None, summary_
         progress_bar.update(1)
     
     progress_bar.close()
+    v_log(f"Total cost: {total_cost:.3f}\n")
 
-    return current_summary, total_cost
+    return current_summary, total_cost, finished
 
 
 def main():
@@ -104,7 +116,7 @@ def main():
     description_list, cost1 = get_descriptions(pdf_path, zoom_factor=args.zoom)
     long_description = "\n".join(description_list)
     
-    summary, cost2 = iteratively_summarize(long_description)
+    summary, cost2, finished = iteratively_summarize(long_description)
     print(f"Final Summary:\n\n {summary}\n\nTotal cost: {(cost1 + cost2):.3f}")
     
     struct_summary, cost3 = structurize_summary(summary)
