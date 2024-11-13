@@ -3,7 +3,7 @@
 ## Introduction
 The Pitch Deck Summary App is a Streamlit-based application that uses OpenAI's GPT-4 to summarize PDF-format pitch decks of any length. It is designed to provide quick and efficient summaries based on the default or a user-provided template. Importantly, it can utilize the GPT-4 Vision API for greater detail.
 
-### ⚠️ Note ⚠️
+### Note 
 
 This application is a prototype and is intended for proof-of-concept demonstration purposes. It incurs costs according to the OpenAI api pricing. Check pricing beforehand for vision preview and GPT-4 turbo. Decks larger than ~5MB per page will not work (that's very large). As a rule of thumb, a typical deck of 3MB and 10 pages will cost around 0.8$ with vision preview (Jan 2024). Running the app locally displays the approximated cost in the console. Please use responsibly
 ## Features
