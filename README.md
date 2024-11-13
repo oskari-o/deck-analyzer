@@ -38,7 +38,3 @@ To run this application locally, follow these steps:
 ## Application Logic
 
 ![App Logic UML Diagram](app_logic_w.png)
-
-
-**License:** Free to use under the MIT license.
-   
